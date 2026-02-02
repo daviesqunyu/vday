@@ -10,17 +10,23 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files FIRST (CSS, JS, images, etc.) - BEFORE other routes
+// Serve CSS and JS files EXPLICITLY FIRST (before static middleware)
+app.get('/style.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(path.join(__dirname, 'style.css'));
+});
+
+app.get('/script.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(path.join(__dirname, 'script.js'));
+});
+
+// Serve other static files (images, etc.)
 app.use(express.static(__dirname, {
     maxAge: '1d',
-    etag: true,
-    setHeaders: (res, path) => {
-        if (path.endsWith('.css')) {
-            res.setHeader('Content-Type', 'text/css');
-        } else if (path.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
-        }
-    }
+    etag: true
 }));
 
 // Initialize database
@@ -178,18 +184,6 @@ app.get('/api/stats', (req, res) => {
 });
 
 // Serve static files explicitly
-app.get('/style.css', (req, res) => {
-    res.sendFile(path.join(__dirname, 'style.css'), {
-        headers: { 'Content-Type': 'text/css' }
-    });
-});
-
-app.get('/script.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'script.js'), {
-        headers: { 'Content-Type': 'application/javascript' }
-    });
-});
-
 // Serve the main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'), {
