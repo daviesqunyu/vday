@@ -71,12 +71,17 @@
             </div>
         </div>
         
-        <!-- Background Music -->
+        <!-- Background Music - Gunna "Bachelor" -->
         <audio id="backgroundMusic" loop>
-            <!-- You can replace this with your own music file -->
-            <!-- For example: <source src="music.mp3" type="audio/mpeg"> -->
-            <!-- Or use a royalty-free music URL -->
+            <!-- Using YouTube audio extractor service for Gunna - Bachelor -->
+            <!-- You can also add your own MP3 file: <source src="bachelor.mp3" type="audio/mpeg"> -->
         </audio>
+        
+        <!-- YouTube Audio Embed (Hidden) for Gunna - Bachelor -->
+        <iframe id="youtubeAudio" style="display: none;" 
+                src="https://www.youtube.com/embed/videoseries?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf&autoplay=0&loop=1&playlist=videoseries" 
+                allow="autoplay">
+        </iframe>
         
         <!-- Music Control Button -->
         <button class="music-control" id="musicControl" title="Play/Pause Music">
