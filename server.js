@@ -10,23 +10,18 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (CSS, JS, images, etc.)
+// Serve static files FIRST (CSS, JS, images, etc.) - BEFORE other routes
 app.use(express.static(__dirname, {
     maxAge: '1d',
-    etag: true
+    etag: true,
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
 }));
-
-// Serve CSS files with correct MIME type
-app.get('*.css', (req, res, next) => {
-    res.type('text/css');
-    next();
-});
-
-// Serve JS files with correct MIME type
-app.get('*.js', (req, res, next) => {
-    res.type('application/javascript');
-    next();
-});
 
 // Initialize database
 const db = new sqlite3.Database('./valentine_responses.db', (err) => {
@@ -182,14 +177,31 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
+// Serve static files explicitly
+app.get('/style.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'style.css'), {
+        headers: { 'Content-Type': 'text/css' }
+    });
+});
+
+app.get('/script.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'script.js'), {
+        headers: { 'Content-Type': 'application/javascript' }
+    });
+});
+
 // Serve the main page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'), {
+        headers: { 'Content-Type': 'text/html' }
+    });
 });
 
 // Serve the admin page
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    res.sendFile(path.join(__dirname, 'admin.html'), {
+        headers: { 'Content-Type': 'text/html' }
+    });
 });
 
 // Start server
