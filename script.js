@@ -150,6 +150,8 @@ yesBtn.addEventListener('click', async () => {
     // Save response to database
     try {
         const apiUrl = window.location.origin;
+        console.log('Sending response to:', `${apiUrl}/api/save-response`);
+        
         const response = await fetch(`${apiUrl}/api/save-response`, {
             method: 'POST',
             headers: {
@@ -161,11 +163,19 @@ yesBtn.addEventListener('click', async () => {
             })
         });
         
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
-            console.log('Response saved successfully!');
+            const data = await response.json();
+            console.log('✅ Response saved successfully!', data);
+        } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('❌ Failed to save response:', errorData);
+            alert('Response recorded but may not be saved to database. Check admin page.');
         }
     } catch (error) {
-        console.error('Error saving response:', error);
+        console.error('❌ Error saving response:', error);
+        alert('Could not connect to server. Response may not be saved.');
     }
 });
 

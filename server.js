@@ -37,11 +37,14 @@ app.use(express.static(__dirname, {
 }));
 
 // Initialize database
-const db = new sqlite3.Database('./valentine_responses.db', (err) => {
+// Use in-memory database for Vercel (serverless) or file-based for local
+const dbPath = process.env.VERCEL ? ':memory:' : './valentine_responses.db';
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-        console.error('Error opening database:', err.message);
+        console.error('❌ Error opening database:', err.message);
+        console.error('Database path:', dbPath);
     } else {
-        console.log('Connected to SQLite database.');
+        console.log('✅ Connected to SQLite database:', dbPath);
         
         // Create table if it doesn't exist with enhanced tracking
         db.run(`CREATE TABLE IF NOT EXISTS responses (
@@ -55,10 +58,10 @@ const db = new sqlite3.Database('./valentine_responses.db', (err) => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (err) {
-                console.error('Error creating table:', err.message);
+                console.error('❌ Error creating table:', err.message);
             } else {
-                console.log('Database table ready.');
-                // Add new columns to existing table if they don't exist
+                console.log('✅ Database table ready.');
+                // Try to add new columns (will fail silently if they exist)
                 db.run(`ALTER TABLE responses ADD COLUMN ip_address TEXT`, () => {});
                 db.run(`ALTER TABLE responses ADD COLUMN user_agent TEXT`, () => {});
                 db.run(`ALTER TABLE responses ADD COLUMN browser_info TEXT`, () => {});
@@ -102,10 +105,21 @@ function getBrowserInfo(userAgent) {
 
 // API endpoint to save response with enhanced tracking
 app.post('/api/save-response', (req, res) => {
+    console.log('📥 POST /api/save-response received');
+    console.log('Request body:', req.body);
+    console.log('Headers:', req.headers);
+    
     const { answer, timestamp } = req.body;
     
     if (!answer) {
+        console.error('❌ Missing answer in request');
         return res.status(400).json({ error: 'Answer is required' });
+    }
+    
+    // Check if database is available
+    if (!db) {
+        console.error('❌ Database not initialized');
+        return res.status(500).json({ error: 'Database not available' });
     }
     
     // Capture tracking information
@@ -115,13 +129,25 @@ app.post('/api/save-response', (req, res) => {
     const deviceType = getDeviceType(userAgent);
     const responseTime = timestamp || new Date().toISOString();
     
+    console.log('📊 Tracking info:', {
+        answer,
+        ipAddress,
+        deviceType,
+        browserInfo,
+        responseTime
+    });
+    
     const query = `INSERT INTO responses (answer, timestamp, ip_address, user_agent, browser_info, device_type) 
                    VALUES (?, ?, ?, ?, ?, ?)`;
     
     db.run(query, [answer, responseTime, ipAddress, userAgent, browserInfo, deviceType], function(err) {
         if (err) {
-            console.error('Error saving response:', err.message);
-            return res.status(500).json({ error: 'Failed to save response' });
+            console.error('❌ Database error:', err.message);
+            console.error('Error details:', err);
+            return res.status(500).json({ 
+                error: 'Failed to save response',
+                details: err.message 
+            });
         }
         
         // Log to console for monitoring
@@ -137,7 +163,13 @@ app.post('/api/save-response', (req, res) => {
         res.json({ 
             success: true, 
             id: this.lastID,
-            message: 'Response saved successfully!' 
+            message: 'Response saved successfully!',
+            data: {
+                answer,
+                timestamp: responseTime,
+                device: deviceType,
+                browser: browserInfo
+            }
         });
     });
 });
