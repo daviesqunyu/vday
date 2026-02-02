@@ -9,7 +9,24 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+
+// Serve static files (CSS, JS, images, etc.)
+app.use(express.static(__dirname, {
+    maxAge: '1d',
+    etag: true
+}));
+
+// Serve CSS files with correct MIME type
+app.get('*.css', (req, res, next) => {
+    res.type('text/css');
+    next();
+});
+
+// Serve JS files with correct MIME type
+app.get('*.js', (req, res, next) => {
+    res.type('application/javascript');
+    next();
+});
 
 // Initialize database
 const db = new sqlite3.Database('./valentine_responses.db', (err) => {

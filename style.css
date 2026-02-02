@@ -299,6 +299,8 @@ body {
     pointer-events: auto;
     cursor: not-allowed;
     border: 2px solid #333 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
     /* Initial position will be set by JavaScript */
 }
 

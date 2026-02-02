@@ -8,27 +8,42 @@ let mouseX = 0;
 let mouseY = 0;
 let isMoving = false;
 
-// Initialize No button position (start near Yes button)
+// Initialize No button position (start right beside Yes button)
 function initializeNoButton() {
     // Wait a bit to ensure Yes button is rendered
     setTimeout(() => {
         const yesRect = yesBtn.getBoundingClientRect();
         const noRect = noBtn.getBoundingClientRect();
         
-        // Position No button to the right of Yes button with some gap
-        const gap = 30;
+        // Position No button right beside Yes button with small gap
+        const gap = 15; // Very close to Yes button
         const initialX = yesRect.right + gap;
-        const initialY = yesRect.top;
+        const initialY = yesRect.top + (yesRect.height - noRect.height) / 2; // Vertically centered with Yes button
         
         // Make sure it's within viewport
         const maxX = window.innerWidth - noRect.width - 20;
         const finalX = Math.min(initialX, maxX);
         
-        // Use transform for smooth positioning, but also set left/top for initial position
-        noBtn.style.left = finalX + 'px';
+        // Ensure button is visible and close to Yes button
+        if (finalX < yesRect.right + 10) {
+            // If not enough space on right, try left side
+            const leftX = yesRect.left - noRect.width - gap;
+            if (leftX > 20) {
+                noBtn.style.left = leftX + 'px';
+            } else {
+                noBtn.style.left = finalX + 'px';
+            }
+        } else {
+            noBtn.style.left = finalX + 'px';
+        }
+        
         noBtn.style.top = initialY + 'px';
         noBtn.style.transform = 'translate(0, 0)';
-    }, 50);
+        
+        // Make sure button is visible
+        noBtn.style.opacity = '1';
+        noBtn.style.visibility = 'visible';
+    }, 100);
 }
 
 // Update mouse position
