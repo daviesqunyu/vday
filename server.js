@@ -18,23 +18,64 @@ const db = new sqlite3.Database('./valentine_responses.db', (err) => {
     } else {
         console.log('Connected to SQLite database.');
         
-        // Create table if it doesn't exist
+        // Create table if it doesn't exist with enhanced tracking
         db.run(`CREATE TABLE IF NOT EXISTS responses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             answer TEXT NOT NULL,
             timestamp TEXT NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            browser_info TEXT,
+            device_type TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (err) {
                 console.error('Error creating table:', err.message);
             } else {
                 console.log('Database table ready.');
+                // Add new columns to existing table if they don't exist
+                db.run(`ALTER TABLE responses ADD COLUMN ip_address TEXT`, () => {});
+                db.run(`ALTER TABLE responses ADD COLUMN user_agent TEXT`, () => {});
+                db.run(`ALTER TABLE responses ADD COLUMN browser_info TEXT`, () => {});
+                db.run(`ALTER TABLE responses ADD COLUMN device_type TEXT`, () => {});
             }
         });
     }
 });
 
-// API endpoint to save response
+// Helper function to get client IP
+function getClientIP(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0] || 
+           req.headers['x-real-ip'] || 
+           req.connection.remoteAddress || 
+           req.socket.remoteAddress ||
+           'Unknown';
+}
+
+// Helper function to detect device type
+function getDeviceType(userAgent) {
+    if (!userAgent) return 'Unknown';
+    const ua = userAgent.toLowerCase();
+    if (/mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
+        return 'Mobile';
+    } else if (/tablet|ipad|playbook|silk/i.test(ua)) {
+        return 'Tablet';
+    }
+    return 'Desktop';
+}
+
+// Helper function to get browser info
+function getBrowserInfo(userAgent) {
+    if (!userAgent) return 'Unknown';
+    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) return 'Chrome';
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+    if (userAgent.includes('Edg')) return 'Edge';
+    if (userAgent.includes('Opera')) return 'Opera';
+    return 'Other';
+}
+
+// API endpoint to save response with enhanced tracking
 app.post('/api/save-response', (req, res) => {
     const { answer, timestamp } = req.body;
     
@@ -42,15 +83,32 @@ app.post('/api/save-response', (req, res) => {
         return res.status(400).json({ error: 'Answer is required' });
     }
     
-    const query = `INSERT INTO responses (answer, timestamp) VALUES (?, ?)`;
+    // Capture tracking information
+    const ipAddress = getClientIP(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const browserInfo = getBrowserInfo(userAgent);
+    const deviceType = getDeviceType(userAgent);
+    const responseTime = timestamp || new Date().toISOString();
     
-    db.run(query, [answer, timestamp || new Date().toISOString()], function(err) {
+    const query = `INSERT INTO responses (answer, timestamp, ip_address, user_agent, browser_info, device_type) 
+                   VALUES (?, ?, ?, ?, ?, ?)`;
+    
+    db.run(query, [answer, responseTime, ipAddress, userAgent, browserInfo, deviceType], function(err) {
         if (err) {
             console.error('Error saving response:', err.message);
             return res.status(500).json({ error: 'Failed to save response' });
         }
         
-        console.log(`Response saved with ID: ${this.lastID}`);
+        // Log to console for monitoring
+        console.log('\n🎉 NEW RESPONSE RECEIVED! 🎉');
+        console.log(`ID: ${this.lastID}`);
+        console.log(`Answer: ${answer.toUpperCase()}`);
+        console.log(`Time: ${responseTime}`);
+        console.log(`IP: ${ipAddress}`);
+        console.log(`Device: ${deviceType}`);
+        console.log(`Browser: ${browserInfo}`);
+        console.log('─'.repeat(50));
+        
         res.json({ 
             success: true, 
             id: this.lastID,
@@ -70,6 +128,40 @@ app.get('/api/responses', (req, res) => {
         }
         
         res.json({ responses: rows });
+    });
+});
+
+// API endpoint to get latest response (for real-time monitoring)
+app.get('/api/latest-response', (req, res) => {
+    const query = `SELECT * FROM responses ORDER BY created_at DESC LIMIT 1`;
+    
+    db.get(query, [], (err, row) => {
+        if (err) {
+            console.error('Error fetching latest response:', err.message);
+            return res.status(500).json({ error: 'Failed to fetch latest response' });
+        }
+        
+        res.json({ response: row || null });
+    });
+});
+
+// API endpoint to get response count
+app.get('/api/stats', (req, res) => {
+    const query = `SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN answer = 'yes' THEN 1 ELSE 0 END) as yes_count
+        FROM responses`;
+    
+    db.get(query, [], (err, row) => {
+        if (err) {
+            console.error('Error fetching stats:', err.message);
+            return res.status(500).json({ error: 'Failed to fetch stats' });
+        }
+        
+        res.json({ 
+            total: row.total || 0,
+            yesCount: row.yes_count || 0
+        });
     });
 });
 
