@@ -291,28 +291,21 @@ const musicControl = document.getElementById('musicControl');
 const playIcon = document.getElementById('playIcon');
 const pauseIcon = document.getElementById('pauseIcon');
 
-// Gunna - Bachelor music sources
-// Add your music file or link here
-const musicSources = [
-    // Option 1: Local file (recommended - add bachelor.mp3 to your project folder)
-    'bachelor.mp3',
-    
-    // Option 2: Online MP3 link (if you upload to hosting service)
-    // 'https://your-hosting-service.com/bachelor.mp3',
-    
-    // Option 3: YouTube audio (requires video ID - see ADD_MUSIC.md for instructions)
-    // You'll need to extract audio from YouTube or use a service
-];
+// Gunna - Bachelor music
+const musicFile = 'Gunna - Bachelor.mp3';
 
 // Set music source
-if (musicSources[0]) {
-    // Check if file exists, if not, try next source
-    backgroundMusic.src = musicSources[0];
-    backgroundMusic.addEventListener('error', () => {
-        console.log('Primary music source failed. Please add bachelor.mp3 file to your project.');
-        console.log('See ADD_MUSIC.md for instructions.');
-    });
-}
+backgroundMusic.src = musicFile;
+
+// Handle music loading
+backgroundMusic.addEventListener('loadeddata', () => {
+    console.log('🎵 Gunna - Bachelor loaded successfully!');
+});
+
+backgroundMusic.addEventListener('error', (e) => {
+    console.error('Error loading music:', e);
+    console.log('Make sure "Gunna - Bachelor.mp3" is in the project folder.');
+});
 
 let isPlaying = false;
 

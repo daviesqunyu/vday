@@ -23,6 +23,13 @@ app.get('/script.js', (req, res) => {
     res.sendFile(path.join(__dirname, 'script.js'));
 });
 
+// Serve MP3 files
+app.get('*.mp3', (req, res) => {
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(path.join(__dirname, req.path.substring(1)));
+});
+
 // Serve other static files (images, etc.)
 app.use(express.static(__dirname, {
     maxAge: '1d',
