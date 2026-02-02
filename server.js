@@ -2,9 +2,61 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Email configuration
+const emailConfig = {
+    service: 'gmail', // You can change this to your email provider
+    auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com', // Set your email
+        pass: process.env.EMAIL_PASS || 'your-app-password' // Set your app password
+    }
+};
+
+// Create email transporter
+const transporter = nodemailer.createTransport(emailConfig);
+
+// Function to send email when someone says YES
+async function sendValentineEmail(recipientEmail) {
+    try {
+        const mailOptions = {
+            from: emailConfig.auth.user,
+            to: recipientEmail,
+            subject: '🎉 Happy Valentine\'s Day! 💕',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #ff1493; margin-bottom: 10px;">🎉 You Said YES! 🎉</h1>
+                        <div style="font-size: 24px; font-weight: bold; color: #ff69b4; margin: 20px 0;">
+                            YOU WILL BE DAVIS VALENTINE
+                        </div>
+                        <p style="font-size: 18px; color: #333; margin-top: 20px;">
+                            Thank you for making me the happiest person today! 💖
+                        </p>
+                        <p style="font-size: 16px; color: #666;">
+                            I can't wait to celebrate Valentine's Day with you! 🎈✨
+                        </p>
+                    </div>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <div style="display: inline-block; padding: 15px 30px; background: linear-gradient(45deg, #ff1493, #ff69b4); color: white; border-radius: 25px; text-decoration: none; font-weight: bold;">
+                            ❤️ With all my love, Davis ❤️
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('📧 Email sent successfully:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('❌ Error sending email:', error);
+        return false;
+    }
+}
 
 // Middleware
 app.use(cors());
@@ -30,11 +82,7 @@ app.get('*.mp3', (req, res) => {
     res.sendFile(path.join(__dirname, req.path.substring(1)));
 });
 
-// Serve other static files (images, etc.)
-app.use(express.static(__dirname, {
-    maxAge: '1d',
-    etag: true
-}));
+// Static files are now served above
 
 // Initialize database
 // Use in-memory database for Vercel (serverless) or file-based for local
@@ -144,12 +192,12 @@ app.post('/api/save-response', (req, res) => {
         if (err) {
             console.error('❌ Database error:', err.message);
             console.error('Error details:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: 'Failed to save response',
-                details: err.message 
+                details: err.message
             });
         }
-        
+
         // Log to console for monitoring
         console.log('\n🎉 NEW RESPONSE RECEIVED! 🎉');
         console.log(`ID: ${this.lastID}`);
@@ -158,10 +206,27 @@ app.post('/api/save-response', (req, res) => {
         console.log(`IP: ${ipAddress}`);
         console.log(`Device: ${deviceType}`);
         console.log(`Browser: ${browserInfo}`);
+
+        // Send email if answer is 'yes'
+        if (answer.toLowerCase() === 'yes') {
+            console.log('📧 Sending Valentine email...');
+
+            // For now, we'll send to a default email. You can modify this to get email from request
+            const recipientEmail = process.env.RECIPIENT_EMAIL || 'recipient@example.com';
+
+            sendValentineEmail(recipientEmail).then(emailSent => {
+                if (emailSent) {
+                    console.log('✅ Valentine email sent successfully!');
+                } else {
+                    console.log('❌ Failed to send Valentine email');
+                }
+            });
+        }
+
         console.log('─'.repeat(50));
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             id: this.lastID,
             message: 'Response saved successfully!',
             data: {
@@ -222,7 +287,9 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
-// Serve static files explicitly
+// Serve static files
+app.use(express.static(__dirname));
+
 // Serve the main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'), {
