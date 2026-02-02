@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 💕</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Hearts Background -->
+        <div class="hearts">
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="header">
+                <h1 class="title">
+                    <i class="fas fa-heart"></i>
+                    Will You Be My Valentine?
+                    <i class="fas fa-heart"></i>
+                </h1>
+                <p class="subtitle">You mean the world to me 💖</p>
+                
+                <!-- Buttons Section - Right after question -->
+                <div class="buttons-container">
+                    <button class="btn btn-yes" id="yesBtn">
+                        <i class="fas fa-heart"></i>
+                        Yes! 💕
+                    </button>
+                    <button class="btn btn-no" id="noBtn">
+                        <i class="fas fa-times"></i>
+                        No
+                    </button>
+                </div>
+            </div>
+
+            <!-- Icons Section -->
+            <div class="icons-section">
+                <i class="fas fa-rose"></i>
+                <i class="fas fa-gift"></i>
+                <i class="fas fa-candy-cane"></i>
+                <i class="fas fa-birthday-cake"></i>
+                <i class="fas fa-heart"></i>
+                <i class="fas fa-kiss-wink-heart"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-butterfly"></i>
+            </div>
+
+            <!-- Success Message (Hidden initially) -->
+            <div class="success-message" id="successMessage">
+                <div class="success-content">
+                    <i class="fas fa-heart success-icon"></i>
+                    <h2>Yay! You made me the happiest person! 🎉</h2>
+                    <p>I can't wait to celebrate with you! 💖</p>
+                    <div class="celebration">
+                        <i class="fas fa-heart"></i>
+                        <i class="fas fa-heart"></i>
+                        <i class="fas fa-heart"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background Music -->
+        <audio id="backgroundMusic" loop>
+            <!-- You can replace this with your own music file -->
+            <!-- For example: <source src="music.mp3" type="audio/mpeg"> -->
+            <!-- Or use a royalty-free music URL -->
+        </audio>
+        
+        <!-- Music Control Button -->
+        <button class="music-control" id="musicControl" title="Play/Pause Music">
+            <i class="fas fa-music"></i>
+            <i class="fas fa-play" id="playIcon"></i>
+            <i class="fas fa-pause" id="pauseIcon" style="display: none;"></i>
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
